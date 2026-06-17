@@ -3,9 +3,9 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.database.db import get_db
 from app.models.admin import Admin
-from app.models.report import Report
+from app.models.report import Report, ReportNote
 from app.schemas.admin_schema import Token, AdminLogin, AdminResponse
-from app.schemas.report_schema import ReportResponse
+from app.schemas.report_schema import ReportResponse, ReportNoteResponse, ReportStatusUpdate, ReportNoteCreate
 from app.services.auth_service import (
     create_access_token,
     get_current_admin,
@@ -50,11 +50,12 @@ def get_all_reports(
     incident_type: Optional[str] = None,
     risk_level: Optional[str] = None,
     location: Optional[str] = None,
+    status: Optional[str] = None,
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_admin)
 ):
     """
-    Retrieve all reports, filtered by incident type, risk level, and location (case-insensitive partial match).
+    Retrieve all reports, filtered by incident type, risk level, location, and status.
     Sorted by created_at in descending order.
     """
     query = db.query(Report)
@@ -65,6 +66,8 @@ def get_all_reports(
         query = query.filter(Report.risk_level == risk_level)
     if location:
         query = query.filter(Report.location.ilike(f"%{location}%"))
+    if status:
+        query = query.filter(Report.status == status)
         
     return query.order_by(Report.created_at.desc()).all()
 
@@ -75,7 +78,7 @@ def get_report_by_id(
     current_admin: Admin = Depends(get_current_admin)
 ):
     """
-    Retrieve details for a specific report.
+    Retrieve details for a specific report, including notes with admin emails.
     """
     report = db.query(Report).filter(Report.id == report_id).first()
     if not report:
@@ -83,7 +86,88 @@ def get_report_by_id(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Report not found"
         )
-    return report
+    
+    # Create response and include notes with admin emails
+    report_response = ReportResponse.from_orm(report)
+    if report.notes:
+        report_response.notes = []
+        for note in report.notes:
+            note_response = ReportNoteResponse.from_orm(note)
+            note_response.admin_email = note.admin.email
+            report_response.notes.append(note_response)
+    
+    return report_response
+
+@router.put("/reports/{report_id}/status", response_model=ReportResponse)
+def update_report_status(
+    report_id: str,
+    status_update: ReportStatusUpdate,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """
+    Update the status of a report (New, In Review, Resolved, Closed).
+    """
+    report = db.query(Report).filter(Report.id == report_id).first()
+    if not report:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Report not found"
+        )
+    
+    valid_statuses = ["New", "In Review", "Resolved", "Closed"]
+    if status_update.status not in valid_statuses:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}"
+        )
+    
+    report.status = status_update.status
+    db.commit()
+    db.refresh(report)
+    
+    # Return with notes
+    report_response = ReportResponse.from_orm(report)
+    if report.notes:
+        report_response.notes = []
+        for note in report.notes:
+            note_response = ReportNoteResponse.from_orm(note)
+            note_response.admin_email = note.admin.email
+            report_response.notes.append(note_response)
+    
+    return report_response
+
+@router.post("/reports/{report_id}/notes", response_model=ReportNoteResponse)
+def add_report_note(
+    report_id: str,
+    note_create: ReportNoteCreate,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """
+    Add a note to a report.
+    """
+    report = db.query(Report).filter(Report.id == report_id).first()
+    if not report:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Report not found"
+        )
+    
+    new_note = ReportNote(
+        report_id=report_id,
+        admin_id=current_admin.id,
+        note_text=note_create.note_text
+    )
+    db.add(new_note)
+    db.commit()
+    db.refresh(new_note)
+    
+    # Return with admin email
+    note_response = ReportNoteResponse.from_orm(new_note)
+    note_response.admin_email = current_admin.email
+    
+    return note_response
 
 @router.post("/verify-evidence")
 async def verify_evidence(

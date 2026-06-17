@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, Text, DateTime
+from sqlalchemy import Column, String, Text, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
 from app.database.db import Base
 
 class Report(Base):
@@ -20,4 +21,22 @@ class Report(Base):
     sentiment = Column(String(50), nullable=True)      # Positive, Neutral, Negative
     summary = Column(Text, nullable=True)              # AI-generated summary
     priority = Column(String(50), nullable=True, default="Pending")
+    status = Column(String(50), nullable=True, default="New")  # New, In Review, Resolved, Closed
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationship to notes
+    notes = relationship("ReportNote", back_populates="report", cascade="all, delete-orphan")
+
+class ReportNote(Base):
+    __tablename__ = "report_notes"
+    
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    report_id = Column(String(36), ForeignKey("reports.id"), nullable=False)
+    admin_id = Column(String(36), ForeignKey("admins.id"), nullable=False)
+    note_text = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    report = relationship("Report", back_populates="notes")
+    admin = relationship("Admin", back_populates="notes")
