@@ -92,11 +92,48 @@ const ReportIncident = () => {
     }
   };
 
-  const stopEmergencyMode = () => {
+  const stopEmergencyMode = async () => {
     stopRecording();
     stopCamera();
-    setEmergencyMode(false);
-    setStep(3); // Jump to evidence step to review
+    
+    // Auto-submit emergency report
+    if (form.location && form.description) {
+      setLoading(true);
+      setError("");
+
+      try {
+        const formData = new FormData();
+        
+        formData.append("incident_type", "Emergency SOS");
+        formData.append("description", form.description);
+        formData.append("location", form.location);
+        if (form.incident_date) formData.append("incident_date", form.incident_date);
+        if (form.incident_time) formData.append("incident_time", form.incident_time);
+        if (file) formData.append("evidence", file);
+
+        const response = await API.post("/reports/submit", formData, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+
+        // Redirect to success page
+        navigate(`/success/${response.data.reference_id}`, {
+          state: { report: response.data }
+        });
+      } catch (err) {
+        console.error(err);
+        setError(
+          err.response?.data?.detail || 
+          "Something went wrong while submitting the emergency report. Please try again."
+        );
+        setEmergencyMode(false);
+        setStep(3);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setEmergencyMode(false);
+      setStep(3);
+    }
   };
 
   const handleChange = (e) => {
