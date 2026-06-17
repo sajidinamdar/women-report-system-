@@ -2,10 +2,10 @@ import random
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from collections import Counter
-from backend.app.database.db import get_db
-from backend.app.models.report import Report
-from backend.app.models.admin import Admin
-from backend.app.services.auth_service import get_current_admin
+from app.database.db import get_db
+from app.models.report import Report
+from app.models.admin import Admin
+from app.services.auth_service import get_current_admin
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
 

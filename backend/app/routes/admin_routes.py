@@ -1,17 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Form
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from backend.app.database.db import get_db
-from backend.app.models.admin import Admin
-from backend.app.models.report import Report
-from backend.app.schemas.admin_schema import Token, AdminLogin, AdminResponse
-from backend.app.schemas.report_schema import ReportResponse
-from backend.app.services.auth_service import (
+from app.database.db import get_db
+from app.models.admin import Admin
+from app.models.report import Report
+from app.schemas.admin_schema import Token, AdminLogin, AdminResponse
+from app.schemas.report_schema import ReportResponse
+from app.services.auth_service import (
     create_access_token,
     get_current_admin,
     verify_password
 )
-from backend.app.services.hash_service import verify_hash, calculate_block_hash
+from app.services.hash_service import verify_hash, calculate_block_hash
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -119,7 +119,7 @@ async def verify_evidence(
             "calculated_hash": report.evidence_hash
         }
     else:
-        from backend.app.services.hash_service import calculate_hash
+        from app.services.hash_service import calculate_hash
         recalculated = calculate_hash(file_bytes)
         return {
             "status": "modified",

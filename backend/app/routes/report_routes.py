@@ -5,11 +5,11 @@ import random
 from typing import Optional
 from fastapi import APIRouter, Depends, Form, File, UploadFile, HTTPException, status
 from sqlalchemy.orm import Session
-from backend.app.database.db import get_db
-from backend.app.models.report import Report
-from backend.app.schemas.report_schema import ReportResponse
-from backend.app.services.groq_service import analyze_incident_description
-from backend.app.services.hash_service import calculate_hash, calculate_block_hash
+from app.database.db import get_db
+from app.models.report import Report
+from app.schemas.report_schema import ReportResponse
+from app.services.groq_service import analyze_incident_description
+from app.services.hash_service import calculate_hash, calculate_block_hash
 
 router = APIRouter(prefix="/reports", tags=["Reports"])
 

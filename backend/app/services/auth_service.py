@@ -6,9 +6,9 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
-from backend.app.database.db import get_db
-from backend.app.models.admin import Admin
-from backend.app.schemas.admin_schema import TokenData
+from app.database.db import get_db
+from app.models.admin import Admin
+from app.schemas.admin_schema import TokenData
 
 SECRET_KEY = os.getenv("SECRET_KEY", "supersecretkeyreportingevidenceintegritychain")
 ALGORITHM = "HS256"

@@ -5,13 +5,13 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
 # Database imports
-from backend.app.database.db import engine, Base, SessionLocal
-from backend.app.models.admin import Admin
-from backend.app.models.report import Report
-from backend.app.services.auth_service import get_password_hash
+from app.database.db import engine, Base, SessionLocal
+from app.models.admin import Admin
+from app.models.report import Report
+from app.services.auth_service import get_password_hash
 
 # Routes imports
-from backend.app.routes import report_routes, admin_routes, analytics_routes
+from app.routes import report_routes, admin_routes, analytics_routes
 
 # Initialize FastAPI application
 app = FastAPI(
