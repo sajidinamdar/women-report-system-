@@ -1,21 +1,23 @@
 import os
 import sys
 
-# Add the project root to Python path
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+# Add the project root and backend directories to Python path
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, project_root)
+sys.path.insert(0, os.path.join(project_root, 'backend'))
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 # Database imports
-from backend.app.database.db import engine, Base, SessionLocal
-from backend.app.models.admin import Admin
-from backend.app.models.report import Report
-from backend.app.services.auth_service import get_password_hash
+from app.database.db import engine, Base, SessionLocal
+from app.models.admin import Admin
+from app.models.report import Report
+from app.services.auth_service import get_password_hash
 
 # Routes imports
-from backend.app.routes import report_routes, admin_routes, analytics_routes
+from app.routes import report_routes, admin_routes, analytics_routes
 
 # Initialize FastAPI application
 app = FastAPI(
